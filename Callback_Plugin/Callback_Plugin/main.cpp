@@ -1,8 +1,76 @@
 #include "maya_includes.h"
 
-
-
 MCallbackIdArray myCallbackArray;
+
+void renderChangeCallback(const MString &str, void *clientData)
+{
+	M3dView sceneView;
+	sceneView = sceneView.active3dView();
+	int numViews = sceneView.numberOf3dViews();
+	MGlobal::displayInfo(MString() + numViews);
+	MDagPath camDag;
+	sceneView.getCamera(camDag);
+
+	
+
+	if (camDag.node().apiType() == MFn::kCamera)
+	{
+		MFnCamera cam = camDag.node();
+		MVector forwardVec;
+		MVector upVec;
+		MVector rightVec;
+		
+		forwardVec = cam.viewDirection(MSpace::kObject);
+		upVec = cam.upDirection(MSpace::kObject);
+		rightVec = cam.rightDirection(MSpace::kObject);
+		cam.
+
+		MGlobal::displayInfo("forward");
+		MGlobal::displayInfo(MString() + forwardVec.x);
+		MGlobal::displayInfo(MString() + forwardVec.y);
+		MGlobal::displayInfo(MString() + forwardVec.z);
+
+		MGlobal::displayInfo("up");
+		MGlobal::displayInfo(MString() + upVec.x);
+		MGlobal::displayInfo(MString() + upVec.y);
+		MGlobal::displayInfo(MString() + upVec.z);
+
+		MGlobal::displayInfo("Right");
+		MGlobal::displayInfo(MString() + rightVec.x);
+		MGlobal::displayInfo(MString() + rightVec.y);
+		MGlobal::displayInfo(MString() + rightVec.z);
+	}
+}
+
+void nameChangeCallback(MObject& node, const MString &string, void* clientData)
+{
+	MFnMesh mesh(node);
+	MString msg(mesh.className());
+	MGlobal::displayInfo(msg + "tatata");
+}
+
+//##########################################################################
+void nodeCreationCallback(MObject& node, void* clientData)
+{
+	MStatus res;
+
+	if (node.apiType() == MFn::kMesh)
+	{
+		MCallbackId namechangeid = MNodeMessage::addNameChangedCallback(
+			node,
+			nameChangeCallback,
+			NULL,
+			&res);
+		
+		if (res == MS::kSuccess)
+		{
+			if (myCallbackArray.append(namechangeid) == MS::kSuccess);
+		}
+
+		
+	}
+
+}
 
 EXPORT MStatus initializePlugin(MObject obj) {
     // most functions will use this variable to indicate for errors
@@ -18,11 +86,27 @@ EXPORT MStatus initializePlugin(MObject obj) {
         MGlobal::displayInfo("Maya plugin loaded!");
     }
     
-    
+	MCallbackId nodeAddedId = MDGMessage::addNodeAddedCallback(
+		nodeCreationCallback,
+		kDefaultNodeType,
+		NULL,
+		&res);
 
-    
+	if (res == MS::kSuccess)
+	{
+		if (myCallbackArray.append(nodeAddedId) == MS::kSuccess);
+	}
 
+	MCallbackId camTranslateId = MUiMessage::add3dViewPostRenderMsgCallback(
+		"modelPanel4",
+		renderChangeCallback,
+		NULL,
+		&res);
 
+	if (res == MS::kSuccess)
+	{
+		if (myCallbackArray.append(camTranslateId) == MS::kSuccess);
+	}
 
     return res;
 }
